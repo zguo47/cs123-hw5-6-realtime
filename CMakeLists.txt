@@ -32,6 +32,10 @@ add_executable(${PROJECT_NAME}
     src/settings.cpp
     src/utils/scenefilereader.cpp
     src/utils/sceneparser.cpp
+    src/shapes/Cone.cpp
+    src/shapes/Cylinder.cpp
+    src/shapes/Cube.cpp
+    src/shapes/Sphere.cpp
 
     src/mainwindow.h
     src/realtime.h
@@ -40,6 +44,12 @@ add_executable(${PROJECT_NAME}
     src/utils/scenefilereader.h
     src/utils/sceneparser.h
     src/utils/shaderloader.h
+    src/shapes/Cone.h
+    src/shapes/Cylinder.h
+    src/shapes/Cube.h
+    src/shapes/Sphere.h
+    src/camera/camera.h
+    src/camera/camera.cpp
     src/utils/aspectratiowidget/aspectratiowidget.hpp
 )
 
