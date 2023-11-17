@@ -154,7 +154,6 @@ void Realtime::paintGL() {
     float aspectRatio = camera.getAspectRatio(size().width() * m_devicePixelRatio, size().height() * m_devicePixelRatio);
     projectionMatrix = camera.getProjectionMatrix(metaData.cameraData, aspectRatio, settings.farPlane, settings.nearPlane);
 
-//    projectionMatrix = glm::perspective(metaData.cameraData.heightAngle, aspectRatio, settings.nearPlane, settings.farPlane);
 
     // Pass in necessary paramets
     GLint v_location = glGetUniformLocation(m_shader, "view_matrix");

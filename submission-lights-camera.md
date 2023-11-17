@@ -36,9 +36,13 @@ Run the program, open the specified `.json` file, follow the instructions to set
 |      Input: `directional_light_1.json`<br/>Output: `directional_light_1_near_far.png`<br/>Parameters: (**25**, **25**, **8**, **10**)      | ![](https://raw.githubusercontent.com/BrownCSCI1230/scenefiles/main/lights-camera/required_outputs/directional_light_1_near_far.png) | ![Place directional_light_1_near_far.png in student_outputs/lights-camera/required folder](student_outputs/lights-camera/required/directional_light_1_near_far.png) |
 
 ### Design Choices
+I use only one vbo and one vao for the sake of efficiency. I store the data for al four pimiTypes one after another in the vbo, and when I need to fetch them, I use an offset. 
 
 ### Collaboration/References
+N/A
 
 ### Known Bugs
+N/A
 
 ### Extra Credit
+N/A
