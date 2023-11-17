@@ -19,15 +19,14 @@ glm::mat4 Camera::getViewMatrix(SceneCameraData &camera) const {
 }
 
 glm::mat4 Camera::getProjectionMatrix(SceneCameraData &camera, float aspectRatio, float farPlane, float nearPlane) const {
-    const float scale = 1.0f / tan(camera.heightAngle * 0.5f);
+    const float scale = 1.0f / tan(camera.heightAngle / 2.0f);
     glm::mat4 proj = glm::mat4(0.0f);
 
     proj[0][0] = scale / aspectRatio; // scale the x coordinates of the projection
-    proj[1][1] = scale;                // scale the y coordinates of the projection
-    proj[2][2] = -farPlane  / (farPlane  - nearPlane ); // used to remap z to [0,1]
-    proj[2][3] = -1.0f;                // set w = -z
-    proj[3][2] = -farPlane  * nearPlane  / (farPlane - nearPlane ); // calculate z
-
+    proj[1][1] = scale;               // scale the y coordinates of the projection
+    proj[2][2] = -(farPlane + nearPlane) / (farPlane - nearPlane); // used to remap z to [-1,1]
+    proj[2][3] = -1.0f;               // set w = -z
+    proj[3][2] = -(2.0f * farPlane * nearPlane) / (farPlane - nearPlane); // calculate z
     return proj;
 }
 

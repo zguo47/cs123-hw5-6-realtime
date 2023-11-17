@@ -21,7 +21,8 @@ void Cone::makeTile(glm::vec3 topLeft,
 
     insertVec3(m_vertexData, topLeft);
     if ((topLeft.x == 0 && topLeft.z == 0) || (topRight.x == 0 && topRight.z == 0)){
-        insertVec3(m_vertexData, glm::normalize(nb_left + nb_right));
+        glm::vec3 normalsum = glm::vec3(bottomLeft.x + bottomRight.x, 0.25, bottomLeft.z + bottomRight.z);
+        insertVec3(m_vertexData, glm::normalize(normalsum));
     }else{
         insertVec3(m_vertexData, nt_left);
     }
@@ -36,7 +37,8 @@ void Cone::makeTile(glm::vec3 topLeft,
         insertVec3(m_vertexData, nt_right);
         insertVec3(m_vertexData, topLeft);
     if ((topLeft.x == 0 && topLeft.z == 0) || (topRight.x == 0 && topRight.z == 0)){
-        insertVec3(m_vertexData, glm::normalize(nb_left + nb_right));
+        glm::vec3 normalsum = glm::vec3(bottomLeft.x + bottomRight.x, 0.25, bottomLeft.z + bottomRight.z);
+        insertVec3(m_vertexData, glm::normalize(normalsum));
     }else{
         insertVec3(m_vertexData, nt_left);
     }
