@@ -3,6 +3,68 @@
 #include "settings.h"
 #include "utils/scenedata.h"
 
+SceneCameraData Camera::getUpdatedRotation(SceneCameraData &camera, int deltaX, int deltaY) const {
+    float xRadians = glm::radians(deltaX * 0.1f);
+    float yRadians = glm::radians(deltaY * 0.1f);
+
+    glm::vec3 right = glm::normalize(glm::cross(glm::vec3(camera.look), glm::vec3(camera.up)));
+
+    glm::vec3 look = glm::normalize(glm::vec3(camera.look));
+
+    glm::mat4 yawRotation = glm::mat4(
+        glm::vec4(cos(xRadians), 0, sin(xRadians), 0),
+        glm::vec4(0, 1, 0, 0),
+        glm::vec4(-sin(xRadians), 0, cos(xRadians), 0),
+        glm::vec4(0, 0, 0, 1)
+        );
+
+    look = glm::vec3(yawRotation * glm::vec4(look, 0.0f));
+    glm::vec3 up = glm::mat3(yawRotation) * glm::vec3(camera.up);
+    right = glm::normalize(glm::cross(look, up));
+
+    glm::mat4 pitchRotation = glm::mat4(
+        glm::vec4(cos(yRadians) + right.x * right.x * (1 - cos(yRadians)), right.x * right.y * (1 - cos(yRadians)) - right.z * sin(yRadians), right.x * right.z * (1 - cos(yRadians)) + right.y * sin(yRadians), 0),
+        glm::vec4(right.y * right.x * (1 - cos(yRadians)) + right.z * sin(yRadians), cos(yRadians) + right.y * right.y * (1 - cos(yRadians)), right.y * right.z * (1 - cos(yRadians)) - right.x * sin(yRadians), 0),
+        glm::vec4(right.z * right.x * (1 - cos(yRadians)) - right.y * sin(yRadians), right.z * right.y * (1 - cos(yRadians)) + right.x * sin(yRadians), cos(yRadians) + right.z * right.z * (1 - cos(yRadians)), 0),
+        glm::vec4(0, 0, 0, 1)
+        );
+
+    look = glm::vec3(pitchRotation * glm::vec4(look, 0.0f));
+    up = glm::vec3(pitchRotation * glm::vec4(up, 0.0f));
+
+    camera.look = glm::vec4(look, 0.0f);
+    camera.up = glm::vec4(up, 0.0f);
+    return camera;
+
+}
+
+SceneCameraData Camera::getUpdatedCameraData(SceneCameraData &camera, std::unordered_map<Qt::Key, bool> m_keyMap, float speed, float deltaTime) const {
+    if (m_keyMap[Qt::Key_W]){
+        glm::vec4 translation = glm::normalize(camera.look) * speed * deltaTime;
+        camera.pos += translation;
+    }else if (m_keyMap[Qt::Key_D]){
+        glm::vec4 translateDir = glm::vec4(glm::normalize(glm::cross(glm::vec3(camera.look), glm::vec3(camera.up))), 0.0f);
+        glm::vec4 translation = translateDir * speed * deltaTime;
+        camera.pos += translation;
+    }else if (m_keyMap[Qt::Key_S]){
+        glm::vec4 translation = glm::normalize(-camera.look) * speed * deltaTime;
+        camera.pos += translation;
+    }else if (m_keyMap[Qt::Key_A]){
+        glm::vec4 translateDir = glm::vec4(glm::normalize(glm::cross(glm::vec3(camera.look), glm::vec3(camera.up))), 0.0f);
+        glm::vec4 translation = -translateDir * speed * deltaTime;
+        camera.pos += translation;
+    }else if (m_keyMap[Qt::Key_Control]){
+        glm::vec4 translateDir = glm::vec4(0.0f, -1.0f, 0.0f, 0.0f);
+        glm::vec4 translation = translateDir * speed * deltaTime;
+        camera.pos += translation;
+    }else if (m_keyMap[Qt::Key_Space]){
+        glm::vec4 translateDir = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
+        glm::vec4 translation = translateDir * speed * deltaTime;
+        camera.pos += translation;
+    }
+    return camera;
+}
+
 glm::mat4 Camera::getViewMatrix(SceneCameraData &camera) const {
     // Optional TODO: implement the getter or make your own design
     glm::vec3 pos(camera.pos);

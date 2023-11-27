@@ -19,15 +19,11 @@ uniform mat4 model_matrix;
 // Task 7: declare uniform mat4's for the view and projection matrix
 uniform mat4 view_matrix;
 uniform mat4 projection_matrix;
-
-
+uniform mat3 normalMatrix;
 
 void main() {
 
     w_position = vec3(model_matrix * vec4(o_position, 1.0));
-
-    mat3 normalMatrix = inverse(transpose(mat3(model_matrix)));
-//    mat3 normalMatrix = transpose(inverse(mat3(model_matrix)));
 
     w_normal = normalMatrix * o_normal;
 

@@ -65,6 +65,12 @@ void Realtime::initializeGL() {
     m_timer = startTimer(1000/60);
     m_elapsedTimer.start();
 
+    m_defaultFBO = 2;
+    m_screen_width = size().width() * m_devicePixelRatio;
+    m_screen_height = size().height() * m_devicePixelRatio;
+    m_fbo_width = m_screen_width;
+    m_fbo_height = m_screen_height;
+
     // Initializing GL.
     // GLEW (GL Extension Wrangler) provides access to OpenGL functions.
     glewExperimental = GL_TRUE;
@@ -85,6 +91,7 @@ void Realtime::initializeGL() {
     glClearColor(0, 0, 0, 255);
 
     m_shader = ShaderLoader::createShaderProgram(":/resources/shaders/default.vert", ":/resources/shaders/default.frag");
+    m_texture_shader = ShaderLoader::createShaderProgram(":/resources/shaders/texture.vert", ":/resources/shaders/texture.frag");
 
     initialized = true;
     glGenBuffers(1, &m_vbo);
@@ -140,6 +147,50 @@ void Realtime::bindBuffer(){
     // Task 14: Unbind your VBO and VAO here
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
+
+    // Task 10: Set the texture.frag uniform for our texture
+    glUseProgram(m_texture_shader);
+    GLint location = glGetUniformLocation(m_texture_shader, "samp");
+    glUniform1i(location, 0);
+    glUseProgram(0);
+
+    // Task 11: Fix this "fullscreen" quad's vertex data
+    // Task 12: Play around with different values!
+    // Task 13: Add UV coordinates
+    std::vector<GLfloat> fullscreen_quad_data =
+        { //     POSITIONS    //
+         -1.0f,  1.0f, 0.0f,
+         0.0f,  1.0f,
+         -1.0f, -1.0f, 0.0f,
+         0.0f,  0.0f,
+         1.0f, -1.0f, 0.0f,
+         1.0f,  0.0f,
+         1.0f,  1.0f, 0.0f,
+         1.0f,  1.0f,
+         -1.0f,  1.0f, 0.0f,
+         0.0f,  1.0f,
+         1.0f, -1.0f, 0.0f,
+         1.0f,  0.0f,
+         };
+
+    // Generate and bind a VBO and a VAO for a fullscreen quad
+    glGenBuffers(1, &m_fullscreen_vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, m_fullscreen_vbo);
+    glBufferData(GL_ARRAY_BUFFER, fullscreen_quad_data.size()*sizeof(GLfloat), fullscreen_quad_data.data(), GL_STATIC_DRAW);
+    glGenVertexArrays(1, &m_fullscreen_vao);
+    glBindVertexArray(m_fullscreen_vao);
+
+    // Task 14: modify the code below to add a second attribute to the vertex attribute array
+    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), nullptr);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), reinterpret_cast<void*>(3 * sizeof(GLfloat)));
+
+    // Unbind the fullscreen quad's VBO and VAO
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+
+    makeFBO();
 }
 
 void Realtime::paintGL() {
@@ -147,13 +198,16 @@ void Realtime::paintGL() {
     // Task 15: Clear the screen here
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    // Task 24: Bind our FBO
+    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+
+    // Task 28: Call glViewport
+    glViewport(0, 0, m_fbo_width, m_fbo_height);
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
     // Bind the shader
     glUseProgram(m_shader);
-
-    viewMatrix = camera.getViewMatrix(metaData.cameraData);
-    float aspectRatio = camera.getAspectRatio(size().width() * m_devicePixelRatio, size().height() * m_devicePixelRatio);
-    projectionMatrix = camera.getProjectionMatrix(metaData.cameraData, aspectRatio, settings.farPlane, settings.nearPlane);
-
 
     // Pass in necessary paramets
     GLint v_location = glGetUniformLocation(m_shader, "view_matrix");
@@ -163,6 +217,8 @@ void Realtime::paintGL() {
     glUniformMatrix4fv(p_location, 1, GL_FALSE, &projectionMatrix[0][0]);
 
     GLint m_location = glGetUniformLocation(m_shader, "model_matrix");
+
+    GLint n_location = glGetUniformLocation(m_shader, "normalMatrix");
 
     GLint mka_location = glGetUniformLocation(m_shader, "ambient");
 
@@ -231,6 +287,9 @@ void Realtime::paintGL() {
         glm::mat4 modelMatrix = shapeData.ctm; // The model matrix for the shape
         glUniformMatrix4fv(m_location, 1, GL_FALSE, &modelMatrix[0][0]);
 
+        glm::mat3 normalMatrix = glm::inverse(glm::transpose(glm::mat3(modelMatrix)));
+        glUniformMatrix3fv(n_location, 1, GL_FALSE, &normalMatrix[0][0]);
+
         SceneMaterial material = shapeData.primitive.material;
         glm::vec4 ambient = material.cAmbient * metaData.globalData.ka;
         glUniform4fv(mka_location, 1, &ambient[0]);
@@ -277,6 +336,15 @@ void Realtime::paintGL() {
 
     }
 
+    // Task 25: Bind the default framebuffer
+    glBindFramebuffer(GL_FRAMEBUFFER, m_defaultFBO);
+
+    glViewport(0, 0, m_screen_width, m_screen_height);
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    paintTexture(m_fbo_texture, settings.perPixelFilter, settings.kernelBasedFilter, settings.extraCredit1);
+
     glBindVertexArray(0);
 
     // Unbind the shader
@@ -290,12 +358,25 @@ void Realtime::resizeGL(int w, int h) {
     glViewport(0, 0, size().width() * m_devicePixelRatio, size().height() * m_devicePixelRatio);
 
     // Students: anything requiring OpenGL calls when the program starts should be done here
+    glDeleteTextures(1, &m_fbo_texture);
+    glDeleteRenderbuffers(1, &m_fbo_renderbuffer);
+    glDeleteFramebuffers(1, &m_fbo);
+
+    m_screen_width = size().width() * m_devicePixelRatio;
+    m_screen_height = size().height() * m_devicePixelRatio;
+    m_fbo_width = m_screen_width;
+    m_fbo_height = m_screen_height;
+    // Task 34: Regenerate your FBOs
+    makeFBO();
 }
 
 void Realtime::sceneChanged() {
     RenderData temp;
     metaData = temp;
     bool success = SceneParser::parse(settings.sceneFilePath, metaData);
+    viewMatrix = camera.getViewMatrix(metaData.cameraData);
+    float aspectRatio = camera.getAspectRatio(size().width() * m_devicePixelRatio, size().height() * m_devicePixelRatio);
+    projectionMatrix = camera.getProjectionMatrix(metaData.cameraData, aspectRatio, settings.farPlane, settings.nearPlane);
     update(); // asks for a PaintGL() call to occur
 }
 
@@ -338,6 +419,10 @@ void Realtime::mouseMoveEvent(QMouseEvent *event) {
         m_prev_mouse_pos = glm::vec2(posX, posY);
 
         // Use deltaX and deltaY here to rotate
+        SceneCameraData newcamera = camera.getUpdatedRotation(metaData.cameraData, deltaX, deltaY);
+        viewMatrix = camera.getViewMatrix(newcamera);
+        float aspectRatio = camera.getAspectRatio(size().width() * m_devicePixelRatio, size().height() * m_devicePixelRatio);
+        projectionMatrix = camera.getProjectionMatrix(newcamera, aspectRatio, settings.farPlane, settings.nearPlane);
 
         update(); // asks for a PaintGL() call to occur
     }
@@ -348,9 +433,75 @@ void Realtime::timerEvent(QTimerEvent *event) {
     float deltaTime = elapsedms * 0.001f;
     m_elapsedTimer.restart();
 
+    float speed = 5;
+
     // Use deltaTime and m_keyMap here to move around
+    SceneCameraData newcamera = camera.getUpdatedCameraData(metaData.cameraData, m_keyMap, speed, deltaTime);
+    viewMatrix = camera.getViewMatrix(newcamera);
+    float aspectRatio = camera.getAspectRatio(size().width() * m_devicePixelRatio, size().height() * m_devicePixelRatio);
+    projectionMatrix = camera.getProjectionMatrix(newcamera, aspectRatio, settings.farPlane, settings.nearPlane);
 
     update(); // asks for a PaintGL() call to occur
+}
+
+void Realtime::makeFBO(){
+    // Task 19: Generate and bind an empty texture, set its min/mag filter interpolation, then unbind
+    glGenTextures(1, &m_fbo_texture);
+    glBindTexture(GL_TEXTURE_2D, m_fbo_texture);
+    glActiveTexture(GL_TEXTURE0);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_fbo_width, m_fbo_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    // Task 20: Generate and bind a renderbuffer of the right size, set its format, then unbind
+    glGenRenderbuffers(1, &m_fbo_renderbuffer);
+    glBindRenderbuffer(GL_RENDERBUFFER, m_fbo_renderbuffer);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, m_fbo_width, m_fbo_height);
+    glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+    // Task 18: Generate and bind an FBO
+    glGenFramebuffers(1, &m_fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+
+    // Task 21: Add our texture as a color attachment, and our renderbuffer as a depth+stencil attachment, to our FBO
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_fbo_texture, 0);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_fbo_renderbuffer);
+
+    // Task 22: Unbind the FBO
+    glBindFramebuffer(GL_FRAMEBUFFER, m_defaultFBO);
+
+}
+
+// Task 31: Update the paintTexture function signature
+void Realtime::paintTexture(GLuint texture, bool filter_or_not, bool blur_or_not, bool gray_or_not){
+    glUseProgram(m_texture_shader);
+    // Task 32: Set your bool uniform on whether or not to filter the texture drawn
+    GLint b_location = glGetUniformLocation(m_texture_shader, "filter_or_not");
+    glUniform1i(b_location, filter_or_not);
+
+    GLint b_location2 = glGetUniformLocation(m_texture_shader, "blur_or_not");
+    glUniform1i(b_location2, blur_or_not);
+
+    GLint b_location3 = glGetUniformLocation(m_texture_shader, "gray_or_not");
+    glUniform1i(b_location3, gray_or_not);
+
+    GLint t_location1 = glGetUniformLocation(m_texture_shader, "texelWidth");
+    glUniform1f(t_location1, 1.0f / m_fbo_width);
+
+    GLint t_location2 = glGetUniformLocation(m_texture_shader, "texelHeight");
+    glUniform1f(t_location2, 1.0f / m_fbo_height);
+
+    glBindVertexArray(m_fullscreen_vao);
+    // Task 10: Bind "texture" to slot 0
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture);
+
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindVertexArray(0);
+    glUseProgram(0);
 }
 
 // DO NOT EDIT

@@ -29,6 +29,8 @@ public:
     void sceneChanged();
     void settingsChanged();
     void saveViewportImage(std::string filePath);
+    void makeFBO();
+    void paintTexture(GLuint texture, bool filter_or_not, bool blur_or_not, bool gray_or_not);
 
 public slots:
     void tick(QTimerEvent* event);                      // Called once per tick of m_timer
@@ -46,6 +48,20 @@ private:
     GLuint m_shader; // Stores id of shader program
     GLuint m_vbo;    // Stores id of VBO
     GLuint m_vao;    // Stores id of VAO
+
+    GLuint m_defaultFBO;
+    int m_fbo_width;
+    int m_fbo_height;
+    int m_screen_width;
+    int m_screen_height;
+
+    GLuint m_texture_shader;
+    GLuint m_fullscreen_vbo;
+    GLuint m_fullscreen_vao;
+    QImage m_image;
+    GLuint m_fbo;
+    GLuint m_fbo_texture;
+    GLuint m_fbo_renderbuffer;
 
     RenderData metaData;
     Camera camera;
