@@ -113,9 +113,15 @@ Paste your output on top of this comment!
 -->
 
 ### Design Choices
+To change the default framebuffer value: line 68 in realtime.cpp. Right now is set to 2.
+
+I write two functions in camera.cpp to handle the parameter update for translation and rotation. When a key is pressed or the mouse is pressed and moved, I will update the camera data's pos, look or up accordingly. For FBOs, I repeat most of the operations done in lab. I pass in uniform booleans to determine which filter I am applying or not.
 
 ### Collaboration/References
+N/A
 
 ### Known Bugs
+N/A
 
 ### Extra Credit
+Implement another per-pixel based filter: grayscale filter. Will be applied when checking the extra-credit 1 box.
