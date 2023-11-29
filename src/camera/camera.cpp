@@ -42,22 +42,27 @@ SceneCameraData Camera::getUpdatedCameraData(SceneCameraData &camera, std::unord
     if (m_keyMap[Qt::Key_W]){
         glm::vec4 translation = glm::normalize(camera.look) * speed * deltaTime;
         camera.pos += translation;
-    }else if (m_keyMap[Qt::Key_D]){
+    }
+    if (m_keyMap[Qt::Key_D]){
         glm::vec4 translateDir = glm::vec4(glm::normalize(glm::cross(glm::vec3(camera.look), glm::vec3(camera.up))), 0.0f);
         glm::vec4 translation = translateDir * speed * deltaTime;
         camera.pos += translation;
-    }else if (m_keyMap[Qt::Key_S]){
+    }
+    if (m_keyMap[Qt::Key_S]){
         glm::vec4 translation = glm::normalize(-camera.look) * speed * deltaTime;
         camera.pos += translation;
-    }else if (m_keyMap[Qt::Key_A]){
+    }
+    if (m_keyMap[Qt::Key_A]){
         glm::vec4 translateDir = glm::vec4(glm::normalize(glm::cross(glm::vec3(camera.look), glm::vec3(camera.up))), 0.0f);
         glm::vec4 translation = -translateDir * speed * deltaTime;
         camera.pos += translation;
-    }else if (m_keyMap[Qt::Key_Control]){
+    }
+    if (m_keyMap[Qt::Key_Control]){
         glm::vec4 translateDir = glm::vec4(0.0f, -1.0f, 0.0f, 0.0f);
         glm::vec4 translation = translateDir * speed * deltaTime;
         camera.pos += translation;
-    }else if (m_keyMap[Qt::Key_Space]){
+    }
+    if (m_keyMap[Qt::Key_Space]){
         glm::vec4 translateDir = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
         glm::vec4 translation = translateDir * speed * deltaTime;
         camera.pos += translation;
